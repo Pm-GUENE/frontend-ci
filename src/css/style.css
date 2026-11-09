@@ -1,0 +1,154 @@
+:root {
+  --turquoise: #9ffffb;
+  --turquoise-clair: #d9fffd;
+  --noir: #000;
+  --texte: #1a1a1a;
+  --blanc: #fff;
+  --rayon-pill: 999px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  color: var(--texte);
+  background: var(--blanc);
+  line-height: 1.4;
+}
+
+a { color: inherit; text-decoration: none; }
+
+:focus-visible {
+  outline: 3px solid #0b5c8a;
+  outline-offset: 3px;
+}
+
+/* En-tête */
+.hero {
+  min-height: 560px;
+  padding: 24px clamp(16px, 5vw, 64px) 56px;
+  background: linear-gradient(180deg, var(--turquoise) 0%, var(--turquoise-clair) 45%, var(--blanc) 100%);
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: 0.01em;
+}
+
+.topbar-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Boutons arrondis */
+.pill {
+  display: inline-block;
+  padding: 14px 28px;
+  border-radius: var(--rayon-pill);
+  font-weight: 700;
+  font-size: 1rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.pill-light {
+  background: var(--blanc);
+  color: var(--noir);
+}
+
+.pill-dark {
+  background: var(--noir);
+  color: var(--turquoise);
+  padding: 18px 40px;
+}
+
+/* Contenu principal de l'en-tête */
+.hero-content {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: center;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 40px auto 0;
+}
+
+.tagline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 40px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.tooth {
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+
+h1 {
+  margin: 0 0 40px;
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  font-weight: 300;
+  line-height: 1.15;
+}
+
+h1 strong {
+  font-weight: 800;
+}
+
+.hero-image {
+  width: 100%;
+  max-width: 482px;
+  height: auto;
+  justify-self: end;
+}
+
+#dentistes {
+  min-height: 200px;
+}
+
+/* Téléphone et petite tablette */
+@media (max-width: 760px) {
+  .hero { padding-bottom: 32px; }
+
+  .hero-content {
+    grid-template-columns: 1fr;
+    margin-top: 28px;
+    text-align: left;
+  }
+
+  .hero-image {
+    justify-self: center;
+    max-width: 320px;
+  }
+
+  .tagline,
+  h1 { margin-bottom: 28px; }
+
+  .topbar-links { width: 100%; }
+  .topbar-links .pill { flex: 1; text-align: center; padding: 12px 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .pill { transition: none; }
+}
