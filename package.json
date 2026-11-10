@@ -4,6 +4,7 @@
   "description": "Frontend de DentaRDV, application de prise de rendez-vous pour une clinique dentaire",
   "private": true,
   "scripts": {
+    "start": "node scripts/dev-server.js",
     "test": "node --test",
     "audit": "npm audit --audit-level=high"
   },

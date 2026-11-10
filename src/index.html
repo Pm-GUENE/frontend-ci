@@ -36,10 +36,31 @@
     </div>
   </header>
 
-  <!-- Section suivante : liste des dentistes et créneaux (à venir) -->
   <main>
-    <section id="dentistes" aria-label="Dentistes et créneaux disponibles"></section>
+    <section id="dentistes" class="dentistes" aria-labelledby="titre-dentistes">
+      <h2 id="titre-dentistes" class="visuellement-cache">Dentistes et créneaux disponibles</h2>
+
+      <form class="recherche" id="formulaire-recherche" role="search">
+        <input type="search" id="recherche" name="recherche" autocomplete="off"
+               placeholder="dentiste, motif de consultation…"
+               aria-label="Rechercher un dentiste ou un motif de consultation">
+        <button type="submit" aria-label="Lancer la recherche">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+            <circle cx="10.500" cy="10.500" r="6.500" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M15.500 15.500L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </form>
+
+      <p id="etat-liste" class="etat-liste" role="status" aria-live="polite"></p>
+
+      <div id="liste-dentistes" class="liste-dentistes"></div>
+    </section>
   </main>
+
+  <script src="js/creneaux.js" defer></script>
+  <script src="js/api.js" defer></script>
+  <script src="js/accueil.js" defer></script>
 
 </body>
 </html>

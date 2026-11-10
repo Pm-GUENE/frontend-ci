@@ -40,9 +40,10 @@ describe('Page d\'accueil (src/index.html)', () => {
     }
   });
 
-  test('référence uniquement des feuilles de style et des images qui existent', () => {
+  test('référence uniquement des feuilles de style, scripts et images qui existent', () => {
     const fichiers = [
       ...[...html.matchAll(/<link[^>]+href="([^"]+\.css)"/g)].map((m) => m[1]),
+      ...[...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1]),
       ...[...html.matchAll(/<img[^>]+src="([^"]+)"/g)].map((m) => m[1]),
     ];
     assert.ok(fichiers.length > 0);

@@ -152,3 +152,261 @@ h1 strong {
   html { scroll-behavior: auto; }
   .pill { transition: none; }
 }
+
+/* ---------- Liste des dentistes ---------- */
+:root {
+  --vert-creneau: #7ed957;
+  --gris-creneau: #cfcfcf;
+  --bleu-recherche: #1fb6e8;
+  --bordure-cyan: #3fd5f2;
+  --bordure-saumon: #f2a58f;
+  --puce-fond: #dff3f2;
+  --puce-bord: #9fcfcc;
+}
+
+.visuellement-cache {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dentistes {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px clamp(16px, 5vw, 64px) 64px;
+}
+
+.recherche {
+  display: flex;
+  align-items: center;
+  max-width: 520px;
+  margin: 0 auto 20px;
+  background: #f4f4f4;
+  border: 2px solid var(--bleu-recherche);
+  border-radius: var(--rayon-pill);
+  box-shadow: 0 2px 0 var(--bleu-recherche);
+}
+
+.recherche input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 20px;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--texte);
+  background: transparent;
+  border: 0;
+  border-radius: var(--rayon-pill);
+}
+
+/* Pas de contour sombre dans le champ : c'est la barre entière qui s'éclaire en bleu. */
+.recherche input:focus,
+.recherche input:focus-visible {
+  outline: none;
+}
+
+.recherche:focus-within {
+  box-shadow: 0 2px 0 var(--bleu-recherche), 0 0 0 2px rgba(31, 182, 232, 0.22);
+}
+
+.recherche button {
+  display: grid;
+  place-items: center;
+  padding: 0 18px;
+  color: var(--bleu-recherche);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.etat-liste {
+  min-height: 1.4em;
+  margin: 0 0 16px;
+  text-align: center;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.lien-bouton {
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: #0b5c8a;
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.liste-dentistes {
+  display: grid;
+  gap: 20px;
+}
+
+.carte-dentiste {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 24px;
+  padding: 20px 24px;
+  background: #f4f4f4;
+  border: 2px solid var(--bordure-cyan);
+  border-radius: 14px;
+}
+
+.carte-dentiste:nth-child(even) { border-color: var(--bordure-saumon); }
+
+.carte-identite {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.avatar {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.carte-texte h3 {
+  margin: 4px 0 2px;
+  font-size: 1.05rem;
+}
+
+.specialite {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.libelle-motifs {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.puces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.puce {
+  padding: 4px 12px 4px 8px;
+  font-size: 0.78rem;
+  color: #1c4a47;
+  background: var(--puce-fond);
+  border: 1px solid var(--puce-bord);
+  border-radius: var(--rayon-pill);
+}
+
+.puce::before {
+  content: "+ ";
+  color: #e8795a;
+  font-weight: 700;
+}
+
+/* Agenda de la semaine */
+.agenda {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: start;
+}
+
+.fleche {
+  align-self: start;
+  margin-top: 4px;
+  padding: 2px 8px;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #222;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.fleche:disabled { color: #bbb; cursor: default; }
+
+.grille {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  transition: opacity 0.15s ease;
+}
+
+.grille-chargement { opacity: 0.45; }
+
+.jour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 4px;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.jour span:first-child { font-weight: 700; text-transform: capitalize; }
+
+.creneau {
+  padding: 7px 0;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #111;
+  border: 0;
+  border-radius: 8px;
+}
+
+.creneau-libre {
+  background: var(--vert-creneau);
+  cursor: pointer;
+}
+
+.creneau-libre:hover { filter: brightness(0.92); }
+
+.creneau-indisponible {
+  color: #555;
+  background: var(--gris-creneau);
+  cursor: not-allowed;
+}
+
+.erreur-creneaux {
+  grid-column: 1 / -1;
+  margin: 8px 0;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.voir-plus {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 0 0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #111;
+  background: none;
+  border: 0;
+  border-top: 1px solid #555;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .carte-dentiste {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .agenda { gap: 2px; }
+  .creneau { font-size: 0.72rem; padding: 8px 0; }
+}
