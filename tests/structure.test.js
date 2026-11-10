@@ -32,12 +32,35 @@ describe('Page d\'accueil (src/index.html)', () => {
     assert.match(html, /<section id="dentistes"/);
   });
 
-  test('donne un texte alternatif à chaque image', () => {
+  test('donne un attribut alt à chaque image (vide seulement pour une image décorative)', () => {
     const images = html.match(/<img\b[^>]*>/g) || [];
     assert.ok(images.length > 0, 'au moins une image attendue');
     for (const image of images) {
-      assert.match(image, /alt="[^"]+"/, `image sans texte alternatif : ${image}`);
+      assert.match(image, /\salt="[^"]*"/, `image sans attribut alt : ${image}`);
     }
+    // L'illustration principale n'est pas décorative : elle doit être décrite.
+    const principale = images.find((image) => image.includes('hero.png'));
+    assert.match(principale, /\salt="[^"]+"/, "l'illustration principale doit avoir un texte alternatif");
+  });
+
+  test('contient la fenêtre de réservation avec ses trois champs et ses deux étapes', () => {
+    assert.match(html, /<dialog id="fenetre-reservation"/);
+    assert.match(html, /<input[^>]+id="champ-nom"/);
+    assert.match(html, /<input[^>]+id="champ-tel"/);
+    assert.match(html, /<select id="champ-motif"/);
+    assert.match(html, /id="etape-formulaire"/);
+    assert.match(html, /id="etape-confirmation"/);
+  });
+
+  test('associe chaque champ du formulaire à son libellé', () => {
+    for (const champ of ['champ-nom', 'champ-tel', 'champ-motif']) {
+      assert.match(html, new RegExp(`<label for="${champ}">`), `libellé manquant pour ${champ}`);
+    }
+  });
+
+  test('charge les scripts dans l\'ordre : la logique avant les écrans qui l\'utilisent', () => {
+    const scripts = [...html.matchAll(/<script[^>]+src="js\/([^"]+)"/g)].map((m) => m[1]);
+    assert.deepEqual(scripts, ['creneaux.js', 'validation.js', 'api.js', 'accueil.js', 'reservation.js']);
   });
 
   test('référence uniquement des feuilles de style, scripts et images qui existent', () => {

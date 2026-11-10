@@ -232,6 +232,12 @@
     });
   }
 
+  // Après une réservation (ou un créneau déjà pris), on recharge les créneaux de ce dentiste.
+  document.addEventListener('creneaux:rafraichir', (evenement) => {
+    const carte = etat.cartes.find((c) => c.dentiste.id === evenement.detail.dentisteId);
+    if (carte) chargerCreneaux(carte);
+  });
+
   // ---------- Recherche ----------
 
   let minuteur = null;
