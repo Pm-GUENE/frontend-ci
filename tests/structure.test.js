@@ -119,6 +119,71 @@ describe('Page de suivi (src/suivi.html)', () => {
   });
 });
 
+describe('Pages de connexion et de changement de mot de passe', () => {
+  const connexion = lire('src', 'connexion.html');
+  const motDePasse = lire('src', 'mot-de-passe.html');
+
+  /** Fichiers référencés par une page (feuilles de style, scripts, images) : tous doivent exister. */
+  function fichiersReferences(html) {
+    return [
+      ...[...html.matchAll(/<link[^>]+href="([^"]+\.css)"/g)].map((m) => m[1]),
+      ...[...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1]),
+      ...[...html.matchAll(/<img[^>]+src="([^"]+)"/g)].map((m) => m[1]),
+    ];
+  }
+
+  test('la connexion demande l\'identifiant et le mot de passe, avec leurs libellés', () => {
+    assert.match(connexion, /<html lang="fr">/);
+    assert.match(connexion, /<label for="champ-identifiant">Identifiant<\/label>/);
+    assert.match(connexion, /<label for="champ-mdp">Mot de passe<\/label>/);
+    assert.match(connexion, /autocomplete="username"/);
+    assert.match(connexion, /autocomplete="current-password"/);
+    assert.match(connexion, /Se connecter/);
+  });
+
+  test('la connexion indique quoi faire en cas de mot de passe oublié, sans réinitialisation automatique', () => {
+    assert.match(connexion, /Mot de passe oublié \? Contactez l'administrateur de la clinique\./);
+  });
+
+  test('le changement de mot de passe demande le nouveau mot de passe et sa confirmation', () => {
+    assert.match(motDePasse, /<h1 class="titre-page">Changer votre mot de passe<\/h1>/);
+    assert.match(motDePasse, /<label for="champ-nouveau">Nouveau mot de passe<\/label>/);
+    assert.match(motDePasse, /<label for="champ-confirmation">Confirmer le mot de passe<\/label>/);
+    assert.match(motDePasse, /autocomplete="new-password"/);
+    assert.match(motDePasse, /Enregistrer et continuer/);
+    assert.match(motDePasse, /8 caractères au minimum/);
+  });
+
+  test('les champs de mot de passe ont un bouton pour afficher ou cacher la saisie', () => {
+    assert.match(connexion, /id="afficher-mdp"/);
+    assert.match(motDePasse, /id="afficher-nouveau"/);
+    assert.match(motDePasse, /id="afficher-confirmation"/);
+  });
+
+  test('chaque page référence uniquement des fichiers qui existent', () => {
+    for (const html of [connexion, motDePasse]) {
+      for (const fichier of fichiersReferences(html)) {
+        assert.ok(existe('src', fichier), `fichier introuvable : src/${fichier}`);
+      }
+    }
+  });
+
+  test('les scripts sont chargés dans l\'ordre : logique, API, puis écran', () => {
+    const scripts = (html) => [...html.matchAll(/<script[^>]+src="js\/([^"]+)"/g)].map((m) => m[1]);
+    assert.deepEqual(scripts(connexion), ['validation.js', 'session.js', 'api.js', 'afficher-mdp.js', 'connexion.js']);
+    assert.deepEqual(scripts(motDePasse), ['validation.js', 'session.js', 'api.js', 'afficher-mdp.js', 'mot-de-passe.js']);
+  });
+
+  test('l\'accueil mène à la page de connexion, qui existe maintenant', () => {
+    assert.match(lire('src', 'index.html'), /href="connexion\.html"/);
+    assert.ok(existe('src', 'connexion.html'));
+  });
+
+  test('la page de changement de mot de passe n\'est pas indexée par les moteurs de recherche', () => {
+    assert.match(motDePasse, /<meta name="robots" content="noindex">/);
+  });
+});
+
 describe('Déploiement', () => {
   test('le Dockerfile copie le site et la configuration Nginx', () => {
     const dockerfile = lire('Dockerfile');

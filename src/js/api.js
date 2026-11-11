@@ -12,7 +12,7 @@
   const BASE = '/api';
 
   async function appeler(chemin, parametres, options) {
-    const { methode = 'GET', corps = null } = options || {};
+    const { methode = 'GET', corps = null, jeton = null } = options || {};
     const url = new URL(BASE + chemin, window.location.origin);
     Object.entries(parametres || {}).forEach(([cle, valeur]) => {
       if (valeur !== null && valeur !== undefined && valeur !== '') {
@@ -22,6 +22,7 @@
 
     const entetes = { Accept: 'application/json' };
     if (corps !== null) entetes['Content-Type'] = 'application/json';
+    if (jeton) entetes.Authorization = `Bearer ${jeton}`;
 
     const reponse = await fetch(url, {
       method: methode,
@@ -53,6 +54,22 @@
      */
     reserver: (donnees) => appeler('/rendez-vous', null, { methode: 'POST', corps: donnees }),
     /** Suivi d'un rendez-vous : numéro + téléphone (9 chiffres). Erreur 404 si le couple ne correspond pas. */
+    /**
+     * Connexion d'un dentiste ou de l'administrateur. La réponse contient access_token, role,
+     * nom et doit_changer_mdp. Erreur 401 si l'identifiant ou le mot de passe est incorrect.
+     */
+    connexion: (identifiant, motDePasse) =>
+      appeler('/connexion', null, { methode: 'POST', corps: { identifiant, mot_de_passe: motDePasse } }),
+    /**
+     * Changement du mot de passe de la personne connectée (jeton obligatoire).
+     * Erreur 422 si le nouveau mot de passe est trop court ou identique à l'actuel, 401 si le jeton a expiré.
+     */
+    changerMotDePasse: (jeton, nouveau, confirmation) =>
+      appeler('/mot-de-passe', null, {
+        methode: 'PATCH',
+        jeton,
+        corps: { nouveau_mot_de_passe: nouveau, confirmation },
+      }),
     suivre: (id, tel) => appeler(`/rendez-vous/${encodeURIComponent(id)}`, { tel }),
     /** Annulation par le patient. Erreur 409 si le rendez-vous est terminé, déjà annulé ou passé. */
     annuler: (id, tel) =>

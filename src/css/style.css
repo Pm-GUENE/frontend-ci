@@ -57,9 +57,12 @@ a { color: inherit; text-decoration: none; }
 .pill {
   display: inline-block;
   padding: 14px 28px;
+  border: 0;
   border-radius: var(--rayon-pill);
+  font-family: inherit;
   font-weight: 700;
   font-size: 1rem;
+  cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -648,7 +651,7 @@ body:has(dialog[open]) { overflow: hidden; }
 }
 
 /* ---------- Page de suivi du rendez-vous ---------- */
-.page-suivi {
+.page-carte {
   min-height: 100vh;
   background: linear-gradient(180deg, var(--turquoise) 0%, var(--turquoise-clair) 55%, var(--blanc) 100%);
   background-attachment: fixed;
@@ -656,11 +659,11 @@ body:has(dialog[open]) { overflow: hidden; }
 
 .entete-page { padding: 24px clamp(16px, 5vw, 64px) 0; }
 
-.suivi {
+.page-principale {
   padding: 24px clamp(16px, 5vw, 64px) 56px;
 }
 
-.suivi-contenu {
+.carte-contenu {
   display: grid;
   grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
   align-items: center;
@@ -669,21 +672,21 @@ body:has(dialog[open]) { overflow: hidden; }
   margin: 24px auto 0;
 }
 
-.carte-suivi {
+.carte-page {
   padding: 28px 32px 32px;
   background: rgba(255, 255, 255, 0.55);
   border: 1.5px solid var(--bordure-saumon);
   border-radius: 14px;
 }
 
-.titre-suivi {
+.titre-page {
   margin: 0 0 22px;
   font-size: 1.25rem;
   font-weight: 700;
   text-align: center;
 }
 
-.illustration-suivi {
+.illustration-page {
   width: 100%;
   max-width: 420px;
   height: auto;
@@ -776,11 +779,90 @@ body:has(dialog[open]) { overflow: hidden; }
 }
 
 @media (max-width: 800px) {
-  .suivi-contenu {
+  .carte-contenu {
     grid-template-columns: 1fr;
     gap: 24px;
   }
 
-  .carte-suivi { padding: 22px 18px 24px; }
-  .illustration-suivi { max-width: 300px; }
+  .carte-page { padding: 22px 18px 24px; }
+  .illustration-page { max-width: 300px; }
+}
+
+/* ---------- Pages de connexion et de changement de mot de passe ---------- */
+.illustration-compte {
+  max-width: 300px;
+  justify-self: center;
+}
+
+.notice-page {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  color: #5a3b00;
+  background: #ffe9b8;
+  border-radius: 10px;
+}
+
+.intro-page {
+  margin: 0 0 18px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.aide-page {
+  margin: 14px 0 0;
+  font-size: 0.85rem;
+  text-align: center;
+  color: #444;
+}
+
+.aide-page a { text-decoration: underline; }
+
+.aide-champ {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.champ-mdp {
+  position: relative;
+}
+
+.champ-mdp input { padding-right: 48px; }
+
+.afficher-mdp {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: #444;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.afficher-mdp:hover { color: #000; background: rgba(0, 0, 0, 0.06); }
+
+#bouton-connexion,
+#bouton-enregistrer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: fit-content;
+  margin: 12px auto 0;
+}
+
+.bouton-contour { border: 1.5px solid #111; }
+
+@media (max-width: 800px) {
+  .illustration-compte { max-width: 200px; }
 }
