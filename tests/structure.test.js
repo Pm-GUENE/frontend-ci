@@ -76,6 +76,49 @@ describe('Page d\'accueil (src/index.html)', () => {
   });
 });
 
+describe('Page de suivi (src/suivi.html)', () => {
+  const html = lire('src', 'suivi.html');
+
+  test('est en français, adaptée au téléphone et a un titre', () => {
+    assert.match(html, /<html lang="fr">/);
+    assert.match(html, /<meta name="viewport"/);
+    assert.match(html, /<title>[^<]*DentaRDV[^<]*<\/title>/);
+  });
+
+  test('demande le numéro de rendez-vous puis le téléphone, avec leurs libellés', () => {
+    assert.match(html, /<label for="champ-numero">Numéro de rendez-vous<\/label>/);
+    assert.match(html, /<label for="champ-tel-suivi">Téléphone<\/label>/);
+    assert.ok(html.indexOf('champ-numero') < html.indexOf('champ-tel-suivi'), 'le numéro vient avant le téléphone');
+  });
+
+  test('prévoit les boutons Retour, Annuler et Reprendre un créneau, et la confirmation d\'annulation', () => {
+    assert.match(html, /id="bouton-retour"/);
+    assert.match(html, /id="bouton-annuler"/);
+    assert.match(html, /id="lien-reprendre"/);
+    assert.match(html, /<dialog id="fenetre-annulation"/);
+    assert.match(html, /Oui, annuler/);
+    assert.match(html, /Non, le garder/);
+  });
+
+  test('référence uniquement des fichiers qui existent, scripts dans le bon ordre', () => {
+    const fichiers = [
+      ...[...html.matchAll(/<link[^>]+href="([^"]+\.css)"/g)].map((m) => m[1]),
+      ...[...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1]),
+      ...[...html.matchAll(/<img[^>]+src="([^"]+)"/g)].map((m) => m[1]),
+    ];
+    for (const fichier of fichiers) {
+      assert.ok(existe('src', fichier), `fichier introuvable : src/${fichier}`);
+    }
+    const scripts = [...html.matchAll(/<script[^>]+src="js\/([^"]+)"/g)].map((m) => m[1]);
+    assert.deepEqual(scripts, ['creneaux.js', 'validation.js', 'statuts.js', 'api.js', 'suivi.js']);
+  });
+
+  test('l\'accueil et la confirmation de réservation pointent vers cette page', () => {
+    assert.match(lire('src', 'index.html'), /href="suivi\.html"/);
+    assert.match(lire('src', 'index.html'), /id="lien-suivi" href="suivi\.html"/);
+  });
+});
+
 describe('Déploiement', () => {
   test('le Dockerfile copie le site et la configuration Nginx', () => {
     const dockerfile = lire('Dockerfile');

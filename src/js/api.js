@@ -52,5 +52,10 @@
      * date (AAAA-MM-JJ), heure (HH:MM). La réponse contient l'id = numéro de rendez-vous.
      */
     reserver: (donnees) => appeler('/rendez-vous', null, { methode: 'POST', corps: donnees }),
+    /** Suivi d'un rendez-vous : numéro + téléphone (9 chiffres). Erreur 404 si le couple ne correspond pas. */
+    suivre: (id, tel) => appeler(`/rendez-vous/${encodeURIComponent(id)}`, { tel }),
+    /** Annulation par le patient. Erreur 409 si le rendez-vous est terminé, déjà annulé ou passé. */
+    annuler: (id, tel) =>
+      appeler(`/rendez-vous/${encodeURIComponent(id)}/annulation`, { tel }, { methode: 'PATCH' }),
   };
 })(window);

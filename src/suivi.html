@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Suivre mon rendez-vous | DentaRDV</title>
+  <meta name="description" content="Consultez l'état de votre rendez-vous avec votre numéro de rendez-vous et votre téléphone.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="page-suivi">
+
+  <header class="entete-page">
+    <nav class="topbar" aria-label="Navigation principale">
+      <a class="brand" href="index.html">DentaRDV</a>
+      <div class="topbar-links">
+        <a class="pill pill-light" href="index.html#dentistes">Prendre rendez-vous</a>
+        <a class="pill pill-light" href="connexion.html">Espace professionnel</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="suivi">
+    <div class="suivi-contenu">
+
+      <div class="carte-suivi">
+        <h1 class="titre-suivi">Mon rendez-vous</h1>
+
+        <!-- Étape 1 : retrouver son rendez-vous -->
+        <section id="etape-recherche">
+          <form id="formulaire-suivi" novalidate>
+            <div class="champ">
+              <label for="champ-numero">Numéro de rendez-vous</label>
+              <input type="text" id="champ-numero" name="numero" inputmode="numeric" autocomplete="off"
+                     maxlength="9" required aria-describedby="erreur-numero">
+              <p class="erreur-champ" id="erreur-numero" role="alert"></p>
+            </div>
+
+            <div class="champ">
+              <label for="champ-tel-suivi">Téléphone</label>
+              <input type="tel" id="champ-tel-suivi" name="tel" inputmode="tel" autocomplete="tel"
+                     placeholder="77 123 45 67" required aria-describedby="erreur-tel-suivi">
+              <p class="erreur-champ" id="erreur-tel-suivi" role="alert"></p>
+            </div>
+
+            <p class="erreur-formulaire" id="erreur-recherche" role="alert"></p>
+
+            <button type="submit" class="pill pill-dark bouton-fenetre" id="bouton-suivre">Suivre mon rendez-vous</button>
+          </form>
+        </section>
+
+        <!-- Étape 2 : état du rendez-vous -->
+        <section id="etape-resultat" hidden>
+          <p class="statut" id="statut-rdv"></p>
+          <p class="message-suivi" id="message-suivi" role="status" aria-live="polite"></p>
+
+          <dl class="details-rdv">
+            <div><dt>Numéro</dt><dd id="detail-numero"></dd></div>
+            <div><dt>Dentiste</dt><dd id="detail-dentiste"></dd></div>
+            <div><dt>Date</dt><dd id="detail-date"></dd></div>
+            <div><dt>Heure</dt><dd id="detail-heure"></dd></div>
+            <div><dt>Motif</dt><dd id="detail-motif"></dd></div>
+          </dl>
+
+          <p class="erreur-formulaire" id="erreur-resultat" role="alert"></p>
+
+          <div class="actions-suivi">
+            <button type="button" class="pill pill-dark bouton-action" id="bouton-retour">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                <path d="M20 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Retour
+            </button>
+            <button type="button" class="pill pill-rouge bouton-action" id="bouton-annuler" hidden>Annuler le rendez-vous</button>
+            <a class="pill pill-dark bouton-action" id="lien-reprendre" href="index.html#dentistes" hidden>Reprendre un créneau</a>
+          </div>
+        </section>
+      </div>
+
+      <img class="illustration-suivi" src="assets/suivi-medecin-patiente.png" width="490" height="436"
+           alt="Une médecin pose la main sur l'épaule d'une patiente assise en face d'elle">
+    </div>
+  </main>
+
+  <!-- Confirmation avant d'annuler -->
+  <dialog id="fenetre-annulation" class="fenetre fenetre-etroite" aria-labelledby="titre-annulation">
+    <h2 id="titre-annulation">Annuler ce rendez-vous ?</h2>
+    <p class="texte-fenetre">Le créneau sera libéré et ne pourra pas être rétabli. Vous pourrez reprendre un autre créneau depuis l'accueil.</p>
+    <p class="erreur-formulaire" id="erreur-annulation" role="alert"></p>
+    <div class="actions-suivi">
+      <button type="button" class="pill pill-dark bouton-action" id="annulation-non">Non, le garder</button>
+      <button type="button" class="pill pill-rouge bouton-action" id="annulation-oui">Oui, annuler</button>
+    </div>
+  </dialog>
+
+  <script src="js/creneaux.js" defer></script>
+  <script src="js/validation.js" defer></script>
+  <script src="js/statuts.js" defer></script>
+  <script src="js/api.js" defer></script>
+  <script src="js/suivi.js" defer></script>
+</body>
+</html>
