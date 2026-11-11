@@ -1104,3 +1104,318 @@ body:has(dialog[open]) { overflow: hidden; }
   .ligne-copie { flex-wrap: wrap; }
   .bouton-copier { padding: 10px 16px; }
 }
+
+/* ---------- Espace dentiste ---------- */
+.pastille {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  background: #e8453c;
+  border-radius: var(--rayon-pill);
+}
+
+.avatar-pastille { filter: invert(1); }
+
+.bandeau-rappel {
+  margin: 12px clamp(16px, 5vw, 64px) 0;
+  padding: 12px 16px;
+  font-weight: 700;
+  text-align: center;
+  background: #ffe9b8;
+  border: 1.5px solid #f0b94a;
+  border-radius: 12px;
+}
+
+.bandeau-rappel p { margin: 0; }
+.bandeau-rappel p + p { margin-top: 6px; }
+
+.dentiste {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px clamp(16px, 5vw, 64px) 64px;
+}
+
+.onglets {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.onglet {
+  padding: 10px 24px;
+  font: inherit;
+  font-weight: 700;
+  color: #111;
+  background: rgba(255, 255, 255, 0.65);
+  border: 0;
+  border-radius: var(--rayon-pill);
+  cursor: pointer;
+}
+
+.onglet:hover { background: #fff; }
+
+.onglet[aria-selected="true"] {
+  color: var(--turquoise);
+  background: #000;
+}
+
+/* Planning */
+.mise-en-page-planning {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.bloc-planning {
+  padding: 16px 18px 18px;
+  background: #f4f4f4;
+  border: 2px solid var(--bordure-cyan);
+  border-radius: 14px;
+}
+
+.navigation-semaine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.titre-semaine {
+  margin: 0;
+  font-weight: 700;
+  text-align: center;
+}
+
+.grille-planning {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.grille-planning .jour { padding: 4px 0; }
+
+.jour-courant {
+  background: #fff;
+  border-radius: 8px;
+}
+
+.case {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 4px 2px;
+  font: inherit;
+  font-size: 0.78rem;
+  line-height: 1.15;
+  color: #111;
+  border: 0;
+  border-radius: 8px;
+}
+
+.case-heure { font-weight: 700; }
+
+.case-nom {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.66rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.case-libre { background: #dff3d2; color: #2f5a1f; }
+.case-passe { background: #e6e6e6; color: #777; }
+.case-en_attente { background: #ffd27a; }
+.case-confirme { background: #7fd1cc; }
+.case-termine { background: #cfe3f5; }
+
+button.case-rdv { cursor: pointer; }
+button.case-rdv:hover { filter: brightness(0.93); }
+
+.legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 12px 0 0;
+  padding: 0;
+  font-size: 0.8rem;
+  list-style: none;
+}
+
+.echantillon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  border-radius: 4px;
+}
+
+/* Demandes en attente */
+.demandes {
+  padding: 16px 18px;
+  background: #f4f4f4;
+  border: 2px solid var(--bordure-saumon);
+  border-radius: 14px;
+}
+
+.demandes h2 {
+  margin: 0 0 10px;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.liste-demandes {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.demande {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #fff;
+  border-radius: 10px;
+}
+
+.demande-texte {
+  display: grid;
+  min-width: 0;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.demande-quand { font-size: 0.85rem; font-weight: 700; }
+.demande-patient { font-size: 0.9rem; }
+.demande-motif { font-size: 0.78rem; color: #555; }
+
+.demande-actions {
+  display: flex;
+  flex: none;
+  gap: 4px;
+}
+
+.bouton-rond {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.bouton-rond:hover { background: rgba(0, 0, 0, 0.07); }
+
+/* Liste filtrée */
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  background: #f4f4f4;
+  border-radius: 12px;
+}
+
+.champ.champ-filtre {
+  flex: 1 1 170px;
+  margin: 0;
+}
+
+.champ-filtre label { font-size: 0.88rem; }
+
+.liste-rdv {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.carte-rdv {
+  display: grid;
+  grid-template-columns: minmax(190px, 1fr) minmax(0, 1.2fr) 92px 235px;
+  gap: 8px 16px;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f4f4f4;
+  border: 1.5px solid var(--puce-bord);
+  border-radius: 12px;
+}
+
+.carte-rdv p { margin: 0; }
+.carte-rdv .statut { margin: 0; }
+.carte-rdv-patient { font-weight: 600; }
+.carte-rdv-patient a { text-decoration: underline; font-weight: 400; }
+.carte-rdv-motif { font-size: 0.85rem; color: #555; }
+
+.carte-rdv-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.bouton-petit {
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--turquoise);
+  background: #000;
+  border: 1.5px solid #000;
+  border-radius: var(--rayon-pill);
+  cursor: pointer;
+}
+
+.bouton-petit:hover { filter: brightness(1.25); }
+.bouton-petit-rouge { color: #fff; background: #e03a3a; border-color: #e03a3a; }
+.bouton-petit-contour { color: #111; background: transparent; border-color: #111; }
+
+@media (max-width: 860px) {
+  .mise-en-page-planning { grid-template-columns: 1fr; }
+
+  .carte-rdv { grid-template-columns: minmax(0, 1fr) auto; }
+  .carte-rdv-quand,
+  .carte-rdv-corps { grid-column: 1; }
+  .carte-rdv .statut { grid-column: 2; grid-row: 1; justify-self: end; }
+  .carte-rdv-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
+@media (max-width: 480px) {
+  .case { min-height: 44px; font-size: 0.72rem; }
+  .case-nom { font-size: 0.6rem; }
+  .bloc-planning { padding: 12px 8px 14px; }
+}
+
+.alerte-action {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: center;
+  color: #7a1a14;
+  background: #fde3e0;
+  border: 1.5px solid #e8453c;
+  border-radius: 10px;
+}

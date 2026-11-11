@@ -253,6 +253,86 @@ describe('Espace administrateur (src/admin.html)', () => {
   });
 });
 
+describe('Espace dentiste (src/dentiste.html)', () => {
+  const html = lire('src', 'dentiste.html');
+
+  test('est en français, non indexée, avec un titre', () => {
+    assert.match(html, /<html lang="fr">/);
+    assert.match(html, /<meta name="robots" content="noindex">/);
+    assert.match(html, /<title>Espace dentiste \| DentaRDV<\/title>/);
+  });
+
+  test('propose deux onglets accessibles : Planning et Liste', () => {
+    assert.match(html, /role="tablist"/);
+    assert.match(html, /<button[^>]+role="tab"[^>]+id="onglet-planning"[^>]+aria-selected="true"[^>]*>Planning<\/button>/);
+    assert.match(html, /<button[^>]+role="tab"[^>]+id="onglet-liste"[^>]+aria-selected="false"[^>]*>Liste<\/button>/);
+    assert.match(html, /id="panneau-planning"[^>]+role="tabpanel"/);
+    assert.match(html, /id="panneau-liste"[^>]+role="tabpanel"/);
+  });
+
+  test('le planning a ses flèches de semaine, sa grille et sa légende', () => {
+    assert.match(html, /id="semaine-precedente"/);
+    assert.match(html, /id="semaine-suivante"/);
+    assert.match(html, /id="grille-planning"/);
+    assert.match(html, /id="legende"/);
+  });
+
+  test('affiche les demandes en attente, la pastille de comptage et la bannière de rappel', () => {
+    assert.match(html, /Demandes en attente/);
+    assert.match(html, /id="liste-demandes"/);
+    assert.match(html, /id="pastille"/);
+    assert.match(html, /id="bandeau-rappel"/);
+  });
+
+  test('la liste se filtre par date, motif et statut, avec les quatre statuts', () => {
+    assert.match(html, /<label for="filtre-date">Date<\/label>/);
+    assert.match(html, /<label for="filtre-motif">Motif<\/label>/);
+    assert.match(html, /<label for="filtre-statut">Statut<\/label>/);
+    for (const statut of ['en_attente', 'confirme', 'termine', 'annule']) {
+      assert.match(html, new RegExp(`<option value="${statut}">`), `statut manquant : ${statut}`);
+    }
+    assert.match(html, /id="reinitialiser-filtres"/);
+  });
+
+  test('le détail d\'un rendez-vous montre le patient, son téléphone et le motif, avec les actions', () => {
+    assert.match(html, /<dialog id="fenetre-detail"/);
+    assert.match(html, /id="detail-patient"/);
+    assert.match(html, /id="detail-tel"/);
+    assert.match(html, /id="detail-motif"/);
+    assert.match(html, /id="actions-detail"/);
+  });
+
+  test('toute annulation demande une confirmation', () => {
+    assert.match(html, /<dialog id="fenetre-annulation-rdv"/);
+    assert.match(html, /Oui, annuler/);
+    assert.match(html, /Non, le garder/);
+  });
+
+  test('référence uniquement des fichiers qui existent, scripts dans le bon ordre', () => {
+    const fichiers = [
+      ...[...html.matchAll(/<link[^>]+href="([^"]+\.css)"/g)].map((m) => m[1]),
+      ...[...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1]),
+      ...[...html.matchAll(/<img[^>]+src="([^"]+)"/g)].map((m) => m[1]),
+    ];
+    for (const fichier of fichiers) {
+      assert.ok(existe('src', fichier), `fichier introuvable : src/${fichier}`);
+    }
+    const scripts = [...html.matchAll(/<script[^>]+src="js\/([^"]+)"/g)].map((m) => m[1]);
+    assert.deepEqual(scripts, ['creneaux.js', 'validation.js', 'statuts.js', 'session.js', 'agenda.js', 'api.js', 'dentiste.js']);
+  });
+
+  test('la connexion envoie le dentiste vers cette page, qui existe maintenant', () => {
+    assert.match(lire('src', 'js', 'session.js'), /PAGE_DENTISTE = 'dentiste\.html'/);
+    assert.ok(existe('src', 'dentiste.html'));
+  });
+
+  test('plus aucune page de destination de la connexion n\'est manquante', () => {
+    for (const page of ['connexion.html', 'mot-de-passe.html', 'dentiste.html', 'admin.html']) {
+      assert.ok(existe('src', page), `page manquante : ${page}`);
+    }
+  });
+});
+
 describe('Déploiement', () => {
   test('le Dockerfile copie le site et la configuration Nginx', () => {
     const dockerfile = lire('Dockerfile');

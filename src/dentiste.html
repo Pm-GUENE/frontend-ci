@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Espace dentiste | DentaRDV</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="page-carte">
+
+  <header class="entete-page">
+    <nav class="topbar" aria-label="Navigation de l'espace dentiste">
+      <a class="brand" href="index.html">DentaRDV</a>
+      <div class="topbar-links topbar-compte">
+        <span class="pill pill-dark pill-statique">
+          <img src="assets/avatar-medecin.png" alt="" width="22" height="22" class="avatar-pastille">
+          <span id="nom-dentiste">Espace dentiste</span>
+          <span class="pastille" id="pastille" hidden></span>
+        </span>
+        <button type="button" class="bouton-icone" id="deconnexion" aria-label="Se déconnecter" title="Se déconnecter">
+          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false">
+            <path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5M15 8l4 4-4 4M19 12H9" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Rappel : rendez-vous confirmé dans moins de 15 minutes -->
+  <div class="bandeau-rappel" id="bandeau-rappel" role="status" aria-live="polite" hidden></div>
+
+  <main class="dentiste">
+
+    <!-- Erreur d'une action faite depuis la liste ou les demandes (par exemple : rendez-vous déjà annulé par le patient) -->
+    <p class="alerte-action" id="alerte-action" role="alert" hidden></p>
+
+    <div class="onglets" role="tablist" aria-label="Affichage des rendez-vous">
+      <button type="button" role="tab" class="onglet" id="onglet-planning" aria-selected="true"
+              aria-controls="panneau-planning" tabindex="0">Planning</button>
+      <button type="button" role="tab" class="onglet" id="onglet-liste" aria-selected="false"
+              aria-controls="panneau-liste" tabindex="-1">Liste</button>
+    </div>
+
+    <!-- Onglet 1 : planning de la semaine et demandes en attente -->
+    <section id="panneau-planning" role="tabpanel" aria-labelledby="onglet-planning">
+      <div class="mise-en-page-planning">
+
+        <div class="bloc-planning">
+          <div class="navigation-semaine">
+            <button type="button" class="fleche" id="semaine-precedente" aria-label="Semaine précédente">&lsaquo;</button>
+            <p class="titre-semaine" id="titre-semaine" aria-live="polite"></p>
+            <button type="button" class="fleche" id="semaine-suivante" aria-label="Semaine suivante">&rsaquo;</button>
+          </div>
+
+          <div class="grille-planning" id="grille-planning" aria-label="Planning de la semaine"></div>
+          <p class="etat-liste" id="etat-planning" role="status"></p>
+
+          <ul class="legende" id="legende" aria-label="Légende du planning"></ul>
+        </div>
+
+        <aside class="demandes" aria-labelledby="titre-demandes">
+          <h2 id="titre-demandes">Demandes en attente <span class="compte-demandes" id="compte-demandes"></span></h2>
+          <p class="etat-liste" id="etat-demandes" role="status"></p>
+          <ul class="liste-demandes" id="liste-demandes"></ul>
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- Onglet 2 : liste filtrée -->
+    <section id="panneau-liste" role="tabpanel" aria-labelledby="onglet-liste" hidden>
+      <form class="filtres" id="filtres" aria-label="Filtrer les rendez-vous">
+        <div class="champ champ-filtre">
+          <label for="filtre-date">Date</label>
+          <input type="date" id="filtre-date" name="date">
+        </div>
+        <div class="champ champ-filtre">
+          <label for="filtre-motif">Motif</label>
+          <select id="filtre-motif" name="motif"><option value="">Tous les motifs</option></select>
+        </div>
+        <div class="champ champ-filtre">
+          <label for="filtre-statut">Statut</label>
+          <select id="filtre-statut" name="statut">
+            <option value="">Tous les statuts</option>
+            <option value="en_attente">En attente</option>
+            <option value="confirme">Confirmé</option>
+            <option value="termine">Terminé</option>
+            <option value="annule">Annulé</option>
+          </select>
+        </div>
+        <button type="button" class="lien-bouton" id="reinitialiser-filtres" hidden>Réinitialiser</button>
+      </form>
+
+      <p class="etat-liste" id="etat-liste-rdv" role="status" aria-live="polite"></p>
+      <ul class="liste-rdv" id="liste-rdv"></ul>
+    </section>
+
+  </main>
+
+  <!-- Détail d'un rendez-vous -->
+  <dialog id="fenetre-detail" class="fenetre" aria-labelledby="titre-detail">
+    <button type="button" class="fermer" id="fermer-detail" aria-label="Fermer la fenêtre">&times;</button>
+    <h2 id="titre-detail">Détail du rendez-vous</h2>
+
+    <div class="resume">
+      <img class="resume-avatar" src="assets/avatar-medecin.png" alt="" width="44" height="44">
+      <p class="resume-nom" id="detail-dentiste"></p>
+    </div>
+    <p class="resume-quand">
+      <span>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+          <rect x="3.500" y="5" width="17" height="15.500" rx="2" fill="none" stroke="currentColor" stroke-width="1.800"/>
+          <path d="M3.500 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round"/>
+        </svg>
+        <span id="detail-date"></span>
+      </span>
+      <span>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="8.500" fill="none" stroke="currentColor" stroke-width="1.800"/>
+          <path d="M12 7.500V12l3 2" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span id="detail-heure"></span>
+      </span>
+    </p>
+
+    <p class="statut" id="detail-statut"></p>
+
+    <dl class="details-rdv">
+      <div><dt>Patient</dt><dd id="detail-patient"></dd></div>
+      <div><dt>Téléphone</dt><dd><a id="detail-tel" href="#"></a></dd></div>
+      <div><dt>Motif</dt><dd id="detail-motif"></dd></div>
+      <div><dt>Numéro</dt><dd id="detail-numero"></dd></div>
+    </dl>
+
+    <p class="erreur-formulaire" id="erreur-detail" role="alert"></p>
+    <div class="actions-suivi" id="actions-detail"></div>
+  </dialog>
+
+  <!-- Confirmation avant d'annuler -->
+  <dialog id="fenetre-annulation-rdv" class="fenetre fenetre-etroite" aria-labelledby="titre-annulation-rdv">
+    <h2 id="titre-annulation-rdv">Annuler ce rendez-vous ?</h2>
+    <p class="texte-fenetre" id="texte-annulation-rdv"></p>
+    <p class="erreur-formulaire" id="erreur-annulation-rdv" role="alert"></p>
+    <div class="actions-suivi">
+      <button type="button" class="pill pill-dark bouton-action" id="annulation-rdv-non">Non, le garder</button>
+      <button type="button" class="pill pill-rouge bouton-action" id="annulation-rdv-oui">Oui, annuler</button>
+    </div>
+  </dialog>
+
+  <script src="js/creneaux.js" defer></script>
+  <script src="js/validation.js" defer></script>
+  <script src="js/statuts.js" defer></script>
+  <script src="js/session.js" defer></script>
+  <script src="js/agenda.js" defer></script>
+  <script src="js/api.js" defer></script>
+  <script src="js/dentiste.js" defer></script>
+</body>
+</html>

@@ -70,6 +70,19 @@
         jeton,
         corps: { nouveau_mot_de_passe: nouveau, confirmation },
       }),
+    /**
+     * Dentiste : ses rendez-vous, triés par date et heure. Filtres : du, au (AAAA-MM-JJ), soin_id, statut.
+     * Chaque rendez-vous contient actions_possibles (statuts applicables maintenant).
+     */
+    mesRendezVous: (jeton, filtres) => appeler('/mes-rendez-vous', filtres, { jeton }),
+    /** Dentiste : nombre (pastille), nouveaux_rendez_vous (en attente) et rappels (confirmés dans 15 min ou moins). */
+    mesNotifications: (jeton) => appeler('/mes-notifications', null, { jeton }),
+    /**
+     * Dentiste : change le statut d'un de ses rendez-vous (confirme, termine ou annule).
+     * Erreur 409 si le changement est interdit, 403 si le rendez-vous n'est pas à lui.
+     */
+    changerStatut: (jeton, id, statut) =>
+      appeler(`/rendez-vous/${encodeURIComponent(id)}`, null, { methode: 'PATCH', jeton, corps: { statut } }),
     /** Liste des motifs de consultation (id, libelle). */
     soins: () => appeler('/soins'),
     /** Administrateur : liste des dentistes avec identifiant et motifs, le plus récent en premier. */
