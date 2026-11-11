@@ -184,6 +184,75 @@ describe('Pages de connexion et de changement de mot de passe', () => {
   });
 });
 
+describe('Espace administrateur (src/admin.html)', () => {
+  const html = lire('src', 'admin.html');
+
+  test('est en français, non indexée, avec un titre', () => {
+    assert.match(html, /<html lang="fr">/);
+    assert.match(html, /<meta name="robots" content="noindex">/);
+    assert.match(html, /<title>Espace administrateur \| DentaRDV<\/title>/);
+  });
+
+  test('affiche la liste des dentistes, le bouton d\'ajout et la déconnexion', () => {
+    assert.match(html, /<h1>Liste des dentistes<\/h1>/);
+    assert.match(html, /id="ouvrir-ajout"/);
+    assert.match(html, /Ajouter un dentiste/);
+    assert.match(html, /id="deconnexion"/);
+    assert.match(html, /id="liste-admin"/);
+  });
+
+  test('ne propose ni modification ni suppression de dentiste (hors périmètre de la version)', () => {
+    assert.doesNotMatch(html, /Supprimer/i);
+    assert.doesNotMatch(html, /Modifier/i);
+  });
+
+  test('le formulaire demande le nom, la spécialité et les motifs, sans identifiant ni mot de passe', () => {
+    assert.match(html, /<label for="champ-nom-dentiste">Prénom\(s\) et nom<\/label>/);
+    assert.match(html, /<label for="champ-specialite">Spécialité<\/label>/);
+    assert.match(html, /<legend>Motifs proposés<\/legend>/);
+    assert.match(html, /id="choix-motifs"/);
+    assert.match(html, /Créer/);
+    assert.doesNotMatch(html, /<label for="champ-identifiant-dentiste"/);
+  });
+
+  test('l\'écran « Dentiste créé » affiche identifiant et mot de passe avec un bouton Copier chacun', () => {
+    assert.match(html, /<h2 id="titre-cree"[^>]*>Dentiste créé<\/h2>/);
+    assert.match(html, /<label for="valeur-identifiant">Identifiant<\/label>/);
+    assert.match(html, /<label for="valeur-mdp">Mot de passe temporaire<\/label>/);
+    assert.match(html, /id="copier-identifiant"/);
+    assert.match(html, /id="copier-mdp"/);
+    assert.match(html, /Notez-le maintenant, il ne sera plus affichable !/);
+    assert.match(html, /id="bouton-terminer">Terminer<\/button>/);
+  });
+
+  test('prévoit la confirmation avant de fermer sans avoir copié le mot de passe', () => {
+    assert.match(html, /id="confirmation-fermeture"/);
+    assert.match(html, /Vous n'avez pas copié le mot de passe\. Fermer quand même \?/);
+  });
+
+  test('référence uniquement des fichiers qui existent, scripts dans le bon ordre', () => {
+    const fichiers = [
+      ...[...html.matchAll(/<link[^>]+href="([^"]+\.css)"/g)].map((m) => m[1]),
+      ...[...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1]),
+    ];
+    for (const fichier of fichiers) {
+      assert.ok(existe('src', fichier), `fichier introuvable : src/${fichier}`);
+    }
+    const scripts = [...html.matchAll(/<script[^>]+src="js\/([^"]+)"/g)].map((m) => m[1]);
+    assert.deepEqual(scripts, ['validation.js', 'session.js', 'dentistes.js', 'api.js', 'admin.js']);
+  });
+
+  test('l\'image d\'avatar utilisée par la liste existe', () => {
+    assert.ok(existe('src', 'assets', 'avatar-medecin.png'));
+    assert.match(lire('src', 'js', 'admin.js'), /assets\/avatar-medecin\.png/);
+  });
+
+  test('la connexion envoie l\'administrateur vers cette page, qui existe maintenant', () => {
+    assert.match(lire('src', 'js', 'session.js'), /PAGE_ADMIN = 'admin\.html'/);
+    assert.ok(existe('src', 'admin.html'));
+  });
+});
+
 describe('Déploiement', () => {
   test('le Dockerfile copie le site et la configuration Nginx', () => {
     const dockerfile = lire('Dockerfile');

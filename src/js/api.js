@@ -70,6 +70,16 @@
         jeton,
         corps: { nouveau_mot_de_passe: nouveau, confirmation },
       }),
+    /** Liste des motifs de consultation (id, libelle). */
+    soins: () => appeler('/soins'),
+    /** Administrateur : liste des dentistes avec identifiant et motifs, le plus récent en premier. */
+    dentistesAdmin: (jeton) => appeler('/admin/dentistes', null, { jeton }),
+    /**
+     * Administrateur : crée un dentiste (nom, specialite, soin_ids). La réponse contient l'identifiant
+     * généré et mot_de_passe_temporaire, qui n'est renvoyé qu'une seule fois.
+     */
+    creerDentiste: (jeton, donnees) =>
+      appeler('/admin/dentistes', null, { methode: 'POST', jeton, corps: donnees }),
     suivre: (id, tel) => appeler(`/rendez-vous/${encodeURIComponent(id)}`, { tel }),
     /** Annulation par le patient. Erreur 409 si le rendez-vous est terminé, déjà annulé ou passé. */
     annuler: (id, tel) =>

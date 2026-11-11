@@ -866,3 +866,241 @@ body:has(dialog[open]) { overflow: hidden; }
 @media (max-width: 800px) {
   .illustration-compte { max-width: 200px; }
 }
+
+/* ---------- Espace administrateur ---------- */
+.topbar-compte { align-items: center; }
+
+.pill-statique {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  cursor: default;
+}
+
+.pill-statique:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.bouton-icone {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: #111;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.bouton-icone:hover { background: rgba(255, 255, 255, 0.6); }
+
+.admin {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px clamp(16px, 5vw, 64px) 64px;
+}
+
+.admin-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.admin-entete h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.bouton-ajout {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+}
+
+.liste-admin {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.carte-admin {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 18px 22px;
+  background: #f4f4f4;
+  border: 2px solid var(--bordure-cyan);
+  border-radius: 14px;
+}
+
+.carte-admin:nth-child(even) { border-color: var(--bordure-saumon); }
+
+.carte-admin-texte { min-width: 0; }
+
+.carte-admin h2 {
+  margin: 4px 0 2px;
+  font-size: 1.1rem;
+}
+
+.carte-admin .specialite { margin: 0 0 4px; }
+
+.carte-admin .identifiant {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: #555;
+}
+
+.badge-nouveau {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  vertical-align: middle;
+  color: #1c4a47;
+  background: var(--vert-creneau);
+  border-radius: var(--rayon-pill);
+}
+
+/* Fenêtre d'ajout */
+.fenetre-ajout { width: min(480px, calc(100vw - 32px)); }
+
+.groupe-motifs {
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+}
+
+.groupe-motifs legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.choix-motifs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.puce-choix { position: relative; display: inline-block; }
+
+.puce-choix input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.puce-choix span {
+  display: inline-block;
+  padding: 6px 14px 6px 10px;
+  font-size: 0.85rem;
+  color: #1c4a47;
+  background: #fff;
+  border: 1px solid var(--puce-bord);
+  border-radius: var(--rayon-pill);
+}
+
+.puce-choix span::before {
+  content: "+ ";
+  font-weight: 700;
+  color: #e8795a;
+}
+
+.puce-choix input:hover + span { background: #eaf8f7; }
+
+.puce-choix input:checked + span {
+  font-weight: 700;
+  background: #7fd1cc;
+  border-color: #4aa8a2;
+}
+
+.puce-choix input:checked + span::before {
+  content: "\2713  ";
+  color: #1c4a47;
+}
+
+.puce-choix input:focus-visible + span {
+  outline: 3px solid #0b5c8a;
+  outline-offset: 2px;
+}
+
+/* Écran « Dentiste créé » */
+.resume-cree {
+  margin: 0 0 16px;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.ligne-copie {
+  display: flex;
+  gap: 8px;
+}
+
+.ligne-copie input {
+  flex: 1;
+  min-width: 0;
+  font-family: Consolas, "Courier New", monospace;
+  letter-spacing: 0.03em;
+}
+
+.bouton-copier {
+  flex: none;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #111;
+  background: #fff;
+  border: 1.5px solid #111;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.bouton-copier:hover { background: #eaf8f7; }
+
+.bouton-copie-ok {
+  color: #1c4a47;
+  background: var(--vert-creneau);
+  border-color: transparent;
+}
+
+.avertissement-mdp {
+  margin: 4px 0 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  color: #b3261e;
+}
+
+.confirmation-fermeture {
+  margin: 12px 0 4px;
+  padding: 12px 14px;
+  font-size: 0.92rem;
+  text-align: center;
+  background: #ffe9b8;
+  border-radius: 10px;
+}
+
+.confirmation-fermeture p { margin: 0 0 10px; font-weight: 600; }
+
+@media (max-width: 560px) {
+  .carte-admin { flex-direction: column; gap: 10px; padding: 16px; }
+  .ligne-copie { flex-wrap: wrap; }
+  .bouton-copier { padding: 10px 16px; }
+}

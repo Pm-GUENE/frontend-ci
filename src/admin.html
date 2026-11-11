@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Espace administrateur | DentaRDV</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="page-carte">
+
+  <header class="entete-page">
+    <nav class="topbar" aria-label="Navigation de l'espace administrateur">
+      <a class="brand" href="index.html">DentaRDV</a>
+      <div class="topbar-links topbar-compte">
+        <span class="pill pill-dark pill-statique">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+            <circle cx="10" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M2.500 20c.600-4 3.500-6 7.500-6 1.500 0 2.800.3 3.900.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="18" cy="17.500" r="2.200" fill="none" stroke="currentColor" stroke-width="1.800"/>
+            <path d="M18 13.500v1.200M18 20.300v1.200M14.500 17.500h1.200M20.300 17.500h1.200" stroke="currentColor" stroke-width="1.800" stroke-linecap="round"/>
+          </svg>
+          Administrateur
+        </span>
+        <button type="button" class="bouton-icone" id="deconnexion" aria-label="Se déconnecter" title="Se déconnecter">
+          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false">
+            <path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5M15 8l4 4-4 4M19 12H9" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="admin">
+    <div class="admin-entete">
+      <h1>Liste des dentistes</h1>
+      <button type="button" class="pill pill-dark bouton-ajout" id="ouvrir-ajout">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.400" stroke-linecap="round"/>
+        </svg>
+        Ajouter un dentiste
+      </button>
+    </div>
+
+    <p class="etat-liste" id="etat-admin" role="status" aria-live="polite"></p>
+    <ul class="liste-admin" id="liste-admin"></ul>
+  </main>
+
+  <!-- Fenêtre d'ajout : formulaire, puis écran « Dentiste créé » -->
+  <dialog id="fenetre-ajout" class="fenetre fenetre-ajout" aria-labelledby="titre-ajout">
+    <button type="button" class="fermer" id="fermer-ajout" aria-label="Fermer la fenêtre">&times;</button>
+
+    <section id="etape-saisie">
+      <h2 id="titre-ajout">Ajouter un dentiste</h2>
+
+      <form id="formulaire-ajout" novalidate>
+        <div class="champ">
+          <label for="champ-nom-dentiste">Prénom(s) et nom</label>
+          <input type="text" id="champ-nom-dentiste" name="nom" autocomplete="off" maxlength="100"
+                 required aria-describedby="erreur-nom-dentiste">
+          <p class="erreur-champ" id="erreur-nom-dentiste" role="alert"></p>
+        </div>
+
+        <div class="champ">
+          <label for="champ-specialite">Spécialité</label>
+          <input type="text" id="champ-specialite" name="specialite" autocomplete="off" maxlength="100"
+                 placeholder="Chirurgien-dentiste" required aria-describedby="erreur-specialite">
+          <p class="erreur-champ" id="erreur-specialite" role="alert"></p>
+        </div>
+
+        <fieldset class="champ groupe-motifs" aria-describedby="erreur-motifs">
+          <legend>Motifs proposés</legend>
+          <div class="choix-motifs" id="choix-motifs"></div>
+          <p class="erreur-champ" id="erreur-motifs" role="alert"></p>
+        </fieldset>
+
+        <p class="erreur-formulaire" id="erreur-ajout" role="alert"></p>
+
+        <button type="submit" class="pill pill-dark bouton-fenetre" id="bouton-creer">Créer</button>
+      </form>
+    </section>
+
+    <section id="etape-cree" hidden>
+      <h2 id="titre-cree" tabindex="-1">Dentiste créé</h2>
+      <p class="resume-cree" id="resume-cree"></p>
+
+      <div class="champ champ-copie">
+        <label for="valeur-identifiant">Identifiant</label>
+        <div class="ligne-copie">
+          <input type="text" id="valeur-identifiant" readonly>
+          <button type="button" class="bouton-copier" id="copier-identifiant">Copier</button>
+        </div>
+      </div>
+
+      <div class="champ champ-copie">
+        <label for="valeur-mdp">Mot de passe temporaire</label>
+        <div class="ligne-copie">
+          <input type="text" id="valeur-mdp" readonly autocomplete="off" spellcheck="false">
+          <button type="button" class="bouton-copier" id="copier-mdp">Copier</button>
+        </div>
+      </div>
+
+      <p class="avertissement-mdp">Notez-le maintenant, il ne sera plus affichable !</p>
+      <p class="aide-confirmation">Transmettez ces identifiants au dentiste. Il devra choisir un nouveau mot de passe à sa première connexion.</p>
+
+      <div class="confirmation-fermeture" id="confirmation-fermeture" role="alertdialog" aria-labelledby="question-fermeture" hidden>
+        <p id="question-fermeture">Vous n'avez pas copié le mot de passe. Fermer quand même ?</p>
+        <div class="actions-suivi">
+          <button type="button" class="pill pill-dark bouton-action" id="fermeture-retour">Retour</button>
+          <button type="button" class="pill pill-rouge bouton-action" id="fermeture-confirmer">Fermer quand même</button>
+        </div>
+      </div>
+
+      <button type="button" class="pill pill-dark bouton-fenetre" id="bouton-terminer">Terminer</button>
+    </section>
+  </dialog>
+
+  <script src="js/validation.js" defer></script>
+  <script src="js/session.js" defer></script>
+  <script src="js/dentistes.js" defer></script>
+  <script src="js/api.js" defer></script>
+  <script src="js/admin.js" defer></script>
+</body>
+</html>
