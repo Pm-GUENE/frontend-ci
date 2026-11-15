@@ -83,15 +83,17 @@ pipeline {
         }
     }
 
-    post {
+   post {
+        always {
+            echo 'Fin du pipeline Frontend CI'
+        }
+
         success {
             echo 'SUCCESS : frontend valide et publie sur Docker Hub'
         }
+
         failure {
             echo 'ECHEC : verifier les logs du pipeline Frontend'
-        }
-        always {
-            
         }
     }
 }
