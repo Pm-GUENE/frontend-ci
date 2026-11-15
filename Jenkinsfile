@@ -10,7 +10,7 @@ pipeline {
             steps {
                 echo 'Preparation du pipeline Frontend DentaRDV'
                 sh 'docker --version'
-                sh 'trivy --version'
+                sh 'docker run --rm aquasec/trivy:0.76.2 --version'
                 sh 'git --version'
             }
         }
@@ -41,13 +41,23 @@ pipeline {
             steps {
                 sh '''
                     echo "Rapport des vulnerabilites HIGH et CRITICAL"
-                    trivy image --severity HIGH,CRITICAL \
-                      ${DOCKER_IMAGE}:${BUILD_NUMBER} || true
+
+                        docker run --rm \
+                        -v /var/run/docker.sock:/var/run/docker.sock \
+                        -v trivy-cache:/root/.cache \
+                        aquasec/trivy:0.76.2 image \
+                        --severity HIGH,CRITICAL \
+                        ${DOCKER_IMAGE}:${BUILD_NUMBER} || true
 
                     echo "Verification bloquante des vulnerabilites CRITICAL"
-                    trivy image --severity CRITICAL \
-                      --exit-code 1 \
-                      ${DOCKER_IMAGE}:${BUILD_NUMBER}
+
+                        docker run --rm \
+                        -v /var/run/docker.sock:/var/run/docker.sock \
+                        -v trivy-cache:/root/.cache \
+                        aquasec/trivy:0.76.2 image \
+                        --severity CRITICAL \
+                        --exit-code 1 \
+                        ${DOCKER_IMAGE}:${BUILD_NUMBER}
                 '''
             }
         }
@@ -81,7 +91,7 @@ pipeline {
             echo 'ECHEC : verifier les logs du pipeline Frontend'
         }
         always {
-            sh 'docker image prune -f || true'
+            
         }
     }
 }
