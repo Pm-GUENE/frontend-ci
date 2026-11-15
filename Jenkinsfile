@@ -19,8 +19,8 @@ pipeline {
             steps {
                 sh '''
                     docker run --rm \
-                      -v "$WORKSPACE:/app" \
-                      -w /app \
+                      --volumes-from dentardv-jenkins \
+                      -w "$WORKSPACE" \
                       node:22-alpine \
                       sh -c "npm ci && npm test && npm audit --audit-level=high"
                 '''
@@ -85,3 +85,5 @@ pipeline {
         }
     }
 }
+
+
