@@ -373,7 +373,7 @@ describe('Déploiement', () => {
   test('le pipeline Jenkins est présent et enchaîne tests, audit, build, Trivy et publication', () => {
     assert.ok(existe('Jenkinsfile'), 'Jenkinsfile manquant');
     const jenkinsfile = lire('Jenkinsfile');
-    for (const element of ['npm test', 'npm audit', 'docker build', 'trivy image', 'docker push']) {
+    for (const element of ['npm test', 'npm audit', 'docker build', 'aquasec/trivy:0.76.2 image', 'docker push']) {
       assert.ok(jenkinsfile.includes(element), `étape manquante dans le Jenkinsfile : ${element}`);
     }
   });
