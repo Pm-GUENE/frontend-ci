@@ -351,4 +351,101 @@ describe('Déploiement', () => {
     assert.ok(!existe('.env'), 'un fichier .env ne doit pas être dans le dépôt');
     assert.match(lire('.gitignore'), /^\.env$/m);
   });
+
+  test('le conteneur ne tourne pas en root et met à jour les paquets du système', () => {
+    const dockerfile = lire('Dockerfile');
+    assert.match(dockerfile, /^USER nginx$/m);
+    assert.match(dockerfile, /apk upgrade --no-cache/);
+    assert.match(dockerfile, /^HEALTHCHECK /m);
+    // USER doit venir après les commandes qui ont besoin de root (apk, chown).
+    assert.ok(dockerfile.indexOf('USER nginx') > dockerfile.indexOf('chown'), 'USER nginx doit être placé après chown');
+  });
+
+  test('le contexte de build exclut les fichiers inutiles à l\'image et les fichiers d\'environnement', () => {
+    const ignore = lire('.dockerignore').split(/\r?\n/);
+    for (const entree of ['.git', '.env', '.env.*', 'node_modules', 'tests', 'scripts', 'package.json', 'Jenkinsfile']) {
+      assert.ok(ignore.includes(entree), `.dockerignore doit contenir ${entree}`);
+    }
+    assert.ok(!ignore.includes('src'), 'le site doit rester dans le contexte de build');
+    assert.ok(!ignore.includes('nginx.conf'), 'la configuration Nginx doit rester dans le contexte de build');
+  });
+
+  test('le pipeline Jenkins est présent et enchaîne tests, audit, build, Trivy et publication', () => {
+    assert.ok(existe('Jenkinsfile'), 'Jenkinsfile manquant');
+    const jenkinsfile = lire('Jenkinsfile');
+    for (const element of ['npm test', 'npm audit', 'docker build', 'trivy image', 'docker push']) {
+      assert.ok(jenkinsfile.includes(element), `étape manquante dans le Jenkinsfile : ${element}`);
+    }
+  });
+});
+
+describe('Sécurité de Nginx (nginx.conf)', () => {
+  const nginx = lire('nginx.conf');
+  // Contenu de chaque bloc « location { ... } » (aucun bloc imbriqué dans ce fichier).
+  const blocs = [...nginx.matchAll(/location[^{]*\{([^}]*)\}/g)].map((m) => m[1]);
+
+  test('la version de Nginx n\'est pas annoncée et les envois volumineux sont refusés', () => {
+    assert.match(nginx, /^\s*server_tokens off;/m);
+    assert.match(nginx, /^\s*client_max_body_size 64k;/m);
+  });
+
+  test('les en-têtes de sécurité sont présents, avec « always »', () => {
+    for (const entete of ['X-Content-Type-Options', 'X-Frame-Options', 'Referrer-Policy', 'Permissions-Policy', 'Content-Security-Policy']) {
+      assert.match(nginx, new RegExp(`add_header ${entete} "[^"]+" always;`), `en-tête manquant : ${entete}`);
+    }
+  });
+
+  test('la politique CSP n\'autorise que les fichiers du site, sans script ni style en ligne', () => {
+    const csp = nginx.match(/add_header Content-Security-Policy "([^"]+)"/)[1];
+    for (const regle of ["default-src 'self'", "script-src 'self'", "style-src 'self'", "connect-src 'self'", "object-src 'none'", "base-uri 'self'", "frame-ancestors 'none'", "form-action 'self'"]) {
+      assert.ok(csp.includes(regle), `règle CSP manquante : ${regle}`);
+    }
+    assert.ok(!csp.includes("'unsafe-inline'"), "la CSP ne doit pas autoriser 'unsafe-inline'");
+    assert.ok(!csp.includes("'unsafe-eval'"), "la CSP ne doit pas autoriser 'unsafe-eval'");
+  });
+
+  test('aucun bloc location ne redéfinit add_header (il ferait perdre les en-têtes de sécurité)', () => {
+    assert.ok(blocs.length >= 5, 'les blocs location doivent être trouvés');
+    for (const bloc of blocs) {
+      assert.ok(!/add_header/.test(bloc), `add_header dans un bloc location : ${bloc.trim().slice(0, 60)}`);
+    }
+  });
+
+  test('les pages respectent la CSP : ni script en ligne, ni style en ligne, ni gestionnaire d\'événement en attribut', () => {
+    for (const page of ['index.html', 'suivi.html', 'connexion.html', 'mot-de-passe.html', 'dentiste.html', 'admin.html']) {
+      const html = lire('src', page);
+      assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(html), `${page} : script en ligne`);
+      assert.ok(!/<style[\s>]/i.test(html), `${page} : balise style`);
+      assert.ok(!/\sstyle="/i.test(html), `${page} : attribut style`);
+      assert.ok(!/\son[a-z]+="/i.test(html), `${page} : gestionnaire d'événement en attribut`);
+      assert.ok(!/javascript:/i.test(html), `${page} : adresse javascript:`);
+      for (const src of [...html.matchAll(/<(?:script|img)[^>]+src="([^"]+)"/g)].map((m) => m[1])) {
+        assert.ok(!/^(https?:)?\/\//.test(src), `${page} : ressource externe ${src}`);
+      }
+    }
+  });
+
+  test('scripts, styles et pages sont revalidés à chaque visite ; seules les images sont gardées en cache', () => {
+    const blocCode = nginx.match(/location ~\* \\\.\(css\|js\)\$ \{([^}]*)\}/);
+    assert.ok(blocCode, 'bloc des fichiers css et js introuvable');
+    assert.match(blocCode[1], /expires -1;/);
+
+    const blocImages = nginx.match(/location ~\* \\\.\(png[^)]*\)\$ \{([^}]*)\}/);
+    assert.ok(blocImages, 'bloc des images introuvable');
+    assert.match(blocImages[1], /expires 7d;/);
+    assert.ok(!/css|js\b/.test(nginx.match(/location ~\* \\\.\((png[^)]*)\)\$/)[1]), 'les scripts ne doivent pas être dans le bloc mis en cache');
+
+    const blocPages = nginx.match(/location \/ \{([^}]*)\}/);
+    assert.match(blocPages[1], /expires -1;/);
+  });
+
+  test('les appels à l\'API sont limités en débit, plus strictement pour la connexion', () => {
+    assert.match(nginx, /limit_req_zone \$binary_remote_addr zone=api:\d+m rate=\d+r\/s;/);
+    assert.match(nginx, /limit_req_zone \$cle_connexion zone=connexion:\d+m rate=\d+r\/m;/);
+    assert.match(nginx, /~\^\/api\/connexion\s+\$binary_remote_addr;/);
+    const blocApi = nginx.match(/location \/api\/ \{([^}]*)\}/)[1];
+    assert.match(blocApi, /limit_req zone=api burst=\d+ nodelay;/);
+    assert.match(blocApi, /limit_req zone=connexion burst=\d+ nodelay;/);
+    assert.match(blocApi, /limit_req_status 429;/);
+  });
 });

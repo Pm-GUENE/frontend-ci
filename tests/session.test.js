@@ -52,6 +52,61 @@ describe('Où envoyer la personne après la connexion', () => {
   });
 });
 
+describe('Réaction à un refus d\'accès du backend (401 ou 403)', () => {
+  const admin = { token: 'x', role: 'admin', nom: 'Administrateur', doit_changer_mdp: false };
+  const dentiste = { token: 'x', role: 'dentiste', nom: 'Fatou Diop', doit_changer_mdp: false };
+
+  test('401 : la session a expiré, on déconnecte', () => {
+    const r = S.reactionErreurAcces(401, { detail: 'Authentification requise' }, dentiste, true);
+    assert.equal(r.type, 'deconnexion');
+    assert.match(r.message, /session a expiré/);
+  });
+
+  test('403 dans l\'espace administrateur : déconnexion, jamais de renvoi vers admin.html (boucle sans fin)', () => {
+    const r = S.reactionErreurAcces(403, { detail: "Accès réservé à l'administrateur" }, admin, true);
+    assert.equal(r.type, 'deconnexion');
+    assert.match(r.message, /Accès refusé/);
+    // L'ancien code renvoyait vers S.destination(session), c'est-à-dire la page courante.
+    assert.equal(S.destination(admin), 'admin.html');
+    assert.equal(Object.values(r).includes('admin.html'), false);
+  });
+
+  test('403 « changer votre mot de passe » pour un dentiste : on l\'envoie changer son mot de passe', () => {
+    const r = S.reactionErreurAcces(403, { detail: "Vous devez d'abord changer votre mot de passe" }, dentiste, true);
+    assert.deepEqual(r, { type: 'mot_de_passe' });
+  });
+
+  test('403 de droits pour un dentiste (jeton d\'un autre rôle) : déconnexion', () => {
+    const r = S.reactionErreurAcces(403, { detail: 'Accès réservé aux dentistes' }, dentiste, true);
+    assert.equal(r.type, 'deconnexion');
+  });
+
+  test('403 sans détail lisible pendant un chargement : déconnexion plutôt que page bloquée', () => {
+    assert.equal(S.reactionErreurAcces(403, null, dentiste, true).type, 'deconnexion');
+    assert.equal(S.reactionErreurAcces(403, { detail: [{ msg: 'x' }] }, admin, true).type, 'deconnexion');
+  });
+
+  test('403 métier pendant une action : simple message, pas de déconnexion', () => {
+    assert.equal(S.reactionErreurAcces(403, { detail: 'Ce rendez-vous ne vous appartient pas' }, dentiste, false), null);
+  });
+
+  test('403 de droits pendant une action : déconnexion quand même', () => {
+    assert.equal(S.reactionErreurAcces(403, { detail: 'Accès réservé aux dentistes' }, dentiste, false).type, 'deconnexion');
+    assert.deepEqual(S.reactionErreurAcces(403, { detail: "Vous devez d'abord changer votre mot de passe" }, dentiste, false), { type: 'mot_de_passe' });
+  });
+
+  test('les autres erreurs ne concernent pas la session', () => {
+    for (const statut of [400, 404, 409, 422, 429, 500, 502, undefined]) {
+      assert.equal(S.reactionErreurAcces(statut, { detail: 'x' }, dentiste, true), null, String(statut));
+    }
+  });
+
+  test('un administrateur n\'est jamais envoyé au changement de mot de passe', () => {
+    const r = S.reactionErreurAcces(403, { detail: "Vous devez d'abord changer votre mot de passe" }, admin, true);
+    assert.equal(r.type, 'deconnexion');
+  });
+});
+
 describe('Session', () => {
   test('sessionDepuisReponse garde le jeton, le rôle, le nom et l\'obligation de changer le mot de passe', () => {
     assert.deepEqual(S.sessionDepuisReponse(reponse('dentiste', true)), {

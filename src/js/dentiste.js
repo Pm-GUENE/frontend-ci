@@ -87,17 +87,25 @@
     window.location.replace(S.PAGE_CONNEXION);
   }
 
-  /** Retourne vrai si l'erreur concernait la session (la page est alors quittée). */
-  function erreurDeSession(erreur) {
-    if (erreur.statut === 401) {
-      deconnecter('Votre session a expiré. Reconnectez-vous.');
+  /**
+   * Retourne vrai si l'erreur concernait la session (la page est alors quittée).
+   * `chargement` : vrai pour le chargement des données (tout 403 est un problème de droits),
+   * faux pour une action sur un rendez-vous (un 403 « ce rendez-vous ne vous appartient pas »
+   * reste un message à l'écran).
+   * Si le backend exige le changement du mot de passe temporaire alors que la session du navigateur
+   * l'ignorait, on corrige la session et on envoie le dentiste sur la page de changement.
+   */
+  function erreurDeSession(erreur, chargement = true) {
+    const reaction = S.reactionErreurAcces(erreur.statut, erreur.corps, session, chargement);
+    if (!reaction) return false;
+    if (reaction.type === 'mot_de_passe') {
+      session.doit_changer_mdp = true;
+      stockage.ecrire(session);
+      window.location.replace(S.PAGE_MOT_DE_PASSE);
       return true;
     }
-    if (erreur.statut === 403 && S.destination(session) !== S.PAGE_DENTISTE) {
-      window.location.replace(S.destination(session));
-      return true;
-    }
-    return false;
+    deconnecter(reaction.message);
+    return true;
   }
 
   $('deconnexion').addEventListener('click', () => deconnecter());
@@ -349,7 +357,7 @@
   }
 
   function creerCarteRdv(rdv) {
-    const tel = el('a', { href: `tel:${rdv.patient_tel}`, texte: V.formaterTelephone(rdv.patient_tel) });
+    const tel = el('a', { href: V.lienTelephone(rdv.patient_tel), texte: V.formaterTelephone(rdv.patient_tel) });
 
     const actions = el('div', { class: 'carte-rdv-actions' });
     A.actionsOrdonnees(rdv.actions_possibles).forEach((action) => {
@@ -438,7 +446,7 @@
     $('detail-patient').textContent = rdv.patient_nom;
     const tel = $('detail-tel');
     tel.textContent = V.formaterTelephone(rdv.patient_tel);
-    tel.setAttribute('href', `tel:${rdv.patient_tel}`);
+    tel.setAttribute('href', V.lienTelephone(rdv.patient_tel));
     $('detail-motif').textContent = rdv.soin.libelle;
     $('detail-numero').textContent = String(rdv.id);
     $('erreur-detail').textContent = '';
@@ -533,7 +541,7 @@
       if (fenetreDetail.open && etat.detailId === rdv.id) remplirDetail(rdv);
       return true;
     } catch (erreur) {
-      if (erreurDeSession(erreur)) return false;
+      if (erreurDeSession(erreur, false)) return false;
       const message = A.messageErreurAction(erreur.statut, V.extraireMessage(erreur.statut, erreur.corps));
       await actualiserTout(); // le rendez-vous a peut-être changé entre-temps (annulé par le patient, par exemple)
       const frais = fenetreDetail.open && etat.detailId !== null ? trouverEnMemoire(etat.detailId) : null;

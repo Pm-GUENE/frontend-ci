@@ -90,6 +90,7 @@ frontend-ci/
 ├── scripts/dev-server.js     # Serveur de développement (site + proxy /api)
 ├── nginx.conf                # Configuration Nginx de l'image
 ├── Dockerfile
+├── Jenkinsfile               # Pipeline d'intégration continue
 ├── package.json
 └── README.md
 ```
@@ -114,7 +115,7 @@ cd frontend-ci
 npm start
 ```
 
-Ouvrir ensuite http://localhost:8080. `npm start` lance un petit serveur qui sert le dossier `src/` et transmet les appels `/api/` au backend, comme le fait Nginx en production. Il n'y a rien à installer : le projet n'a aucune dépendance.
+Ouvrir ensuite http://localhost:8080. `npm start` lance un petit serveur qui sert le dossier `src/` et transmet les appels `/api/` au backend, comme le fait Nginx en production. Il envoie les mêmes en-têtes de sécurité que Nginx (dont la politique CSP), ce qui permet de repérer une page non conforme dès le développement. Il n'écoute que sur `127.0.0.1`. Il n'y a rien à installer : le projet n'a aucune dépendance.
 
 | Variable | Rôle | Valeur par défaut |
 |---|---|---|
@@ -166,8 +167,9 @@ Les tests utilisent l'outil intégré à Node (`node --test`), sans bibliothèqu
 | `session.test.js` | Redirection selon le rôle, session, règles du nouveau mot de passe (8 caractères, 72 octets) |
 | `agenda.test.js` | Couleur de chaque case du planning, boutons d'action, rappel, filtres, message de conflit |
 | `dentistes.test.js` | Formulaire d'ajout d'un dentiste (prénom et nom, spécialité, au moins un motif) |
+| `dev-server.test.js` | Serveur de développement : adresse mal formée (erreur 400 sans arrêt du serveur), sortie du dossier servi interdite, en-têtes identiques à ceux de Nginx |
 
-**Tests de structure** (`structure.test.js`) : chaque page a ses champs et ses libellés, charge ses scripts dans le bon ordre, ne référence que des fichiers qui existent, et le `Dockerfile` et Nginx contiennent ce qu'on attend (`/health`, proxy `/api/`, aucun secret versionné).
+**Tests de structure** (`structure.test.js`) : chaque page a ses champs et ses libellés, charge ses scripts dans le bon ordre et ne référence que des fichiers qui existent. Ils vérifient aussi la configuration de déploiement : `/health`, proxy `/api/`, aucun secret versionné, conteneur sans root, en-têtes de sécurité et politique CSP de Nginx, pages sans script ni style en ligne, cache et limites de débit.
 
 Scan de sécurité des dépendances :
 
@@ -192,9 +194,23 @@ Le site est alors sur http://localhost:8080 et le contrôle de santé sur http:/
 
 ### Ce que contient l'image
 
-- `nginx:1.27-alpine` avec la configuration `nginx.conf` et le dossier `src/`.
+- `nginx:1.30.6-alpine3.24`, avec les paquets du système mis à jour au build (`apk upgrade --no-cache`), la configuration `nginx.conf` et le dossier `src/`.
+- Nginx tourne avec l'utilisateur `nginx`, pas avec root. Il écoute toujours sur le port 80, ce qui fonctionne sans root dans un conteneur à partir de Docker 20.10.
 - Un `HEALTHCHECK` Docker qui appelle `/health`.
-- En-têtes de sécurité (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) et compression.
+- Le `.dockerignore` ne laisse entrer dans le contexte de build que `nginx.conf` et `src/`.
+
+### Protections de Nginx
+
+| Protection | Détail |
+|---|---|
+| Politique CSP | `Content-Security-Policy` stricte : seuls les scripts, styles et images du site sont autorisés. Le site n'a ni script ni style en ligne |
+| En-têtes | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` |
+| Version masquée | `server_tokens off` : la version de Nginx n'est pas annoncée |
+| Limite de débit | 20 requêtes par seconde et par adresse sur `/api/`, et 30 par minute sur `/api/connexion` contre les essais répétés de mots de passe. Au-delà, réponse 429 |
+| Taille des envois | 64 ko au maximum (`client_max_body_size`) |
+| Cache | Pages, scripts et styles revalidés à chaque visite (`Cache-Control: no-cache`), pour que le nouveau code soit servi dès un redéploiement. Les images sont gardées 7 jours |
+
+Aucun bloc `location` ne contient de `add_header` : dans Nginx, un tel ajout remplacerait tous les en-têtes de sécurité pour ce bloc. Un test vérifie cette règle.
 
 ### Lien avec le backend
 
@@ -206,17 +222,15 @@ Nginx résout le nom `backend` à chaque requête (`resolver 127.0.0.11`). Il d�
 
 ## 9. Intégration continue (Jenkins)
 
-Le pipeline du frontend est écrit par Racine SABALY dans un `Jenkinsfile` à la racine du dépôt. Il suit les étapes demandées par le sujet, adaptées à un frontend :
+Le pipeline du frontend est décrit dans le `Jenkinsfile` à la racine du dépôt (responsable : Racine SABALY). Ses étapes :
 
-1. **Checkout** du code.
-2. **Dépendances** : `npm install`.
-3. **Tests** : `npm test`.
-4. **Scan du code et des dépendances** : `npm run audit`.
-5. **Build** de l'image Docker.
-6. **Scan de l'image** avec Trivy.
-7. **Push** sur Docker Hub, avec le numéro de build comme tag, et `latest`.
+1. **Préparation** : vérification de Docker, Trivy et Git sur l'agent.
+2. **Tests et audit npm** : dans un conteneur `node:22-alpine`, `npm ci`, puis `npm test`, puis `npm audit --audit-level=high`.
+3. **Build Docker** : image `dentarvd/frontend`, avec le numéro de build comme tag, et `latest`.
+4. **Analyse Trivy** : rapport des vulnérabilités HIGH et CRITICAL, puis vérification bloquante sur les CRITICAL.
+5. **Publication Docker Hub** : envoi des deux tags, avec les identifiants gardés dans Jenkins (`dockerhub-credentials`), jamais dans le dépôt.
 
-Un push sur ce dépôt déclenche le pipeline par webhook GitHub. À la fin, le déploiement est relancé par le dépôt `deployment-cd`. L'agent Jenkins doit disposer de Node.js 20 ou plus (par exemple l'image `node:20-alpine`) et de Docker.
+Le déploiement est ensuite fait par le dépôt `deployment-cd`, qui récupère l'image `dentarvd/frontend:latest`.
 
 ---
 
@@ -226,7 +240,9 @@ Un push sur ce dépôt déclenche le pipeline par webhook GitHub. À la fin, le 
 - **Pas d'injection de HTML** : les données reçues de l'API (noms, motifs) sont insérées avec `textContent`, jamais interprétées comme du HTML.
 - **Mot de passe temporaire** : affiché une seule fois dans l'espace administrateur, jamais stocké par le navigateur, et effacé de la page dès la fermeture de la fenêtre.
 - **Messages d'erreur prudents** : une erreur de connexion ou de suivi ne dit pas lequel des deux champs est faux.
-- **Accès protégé** : chaque espace vérifie la session et renvoie vers la bonne page si le rôle ne correspond pas.
+- **Accès protégé** : chaque espace vérifie la session et renvoie vers la bonne page si le rôle ne correspond pas. Si le backend refuse l'accès (erreur 403), la personne est déconnectée, ou envoyée au changement de mot de passe si c'est ce que le backend exige. Elle n'est jamais renvoyée vers la page où elle se trouve, ce qui provoquerait un rechargement sans fin.
+- **Défense en profondeur** : la politique CSP de Nginx interdit tout script en ligne ou venu d'ailleurs, même si une faille d'injection apparaissait un jour. Les liens téléphoniques ne contiennent que des chiffres.
+- **Limites côté serveur** : débit limité sur l'API et sur la connexion, taille des envois plafonnée, version de Nginx masquée, conteneur sans root (détail à la section 8).
 - **Accessibilité** : champs reliés à leurs libellés, messages d'erreur annoncés (`role="alert"`), onglets utilisables au clavier, fenêtres natives `<dialog>` (focus géré, touche Échap), textes alternatifs sur les images, contour visible sur l'élément au clavier.
 - **Adaptation au téléphone** : toutes les pages sont testées de 375 px à l'écran large, sans défilement horizontal.
 
@@ -251,6 +267,8 @@ Un push sur ce dépôt déclenche le pipeline par webhook GitHub. À la fin, le 
 | `Address already in use` au lancement de `npm start` | Le port 8080 est pris. Utiliser `PORT=9000 npm start` |
 | La page de connexion ne garde pas la session | Navigation privée ou stockage bloqué : le navigateur refuse le `sessionStorage` |
 | « Votre session a expiré » | Le jeton dure 8 heures. Se reconnecter |
+| « Accès refusé. Reconnectez-vous. » | Le backend a refusé l'accès (erreur 403) : la session du navigateur ne correspond pas aux droits du compte. Se reconnecter |
+| « Trop de tentatives en peu de temps » (erreur 429) | La limite de débit de Nginx est atteinte. Patienter quelques secondes |
 
 ---
 

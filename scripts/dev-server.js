@@ -2,12 +2,11 @@
 // comme le fait Nginx en production. Aucune dépendance : `npm start`.
 //   PORT         port du site (8080 par défaut)
 //   BACKEND_URL  adresse du backend (http://127.0.0.1:8000 par défaut)
+// Ce serveur n'écoute que sur 127.0.0.1 : il sert au développement, jamais à la production.
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const PORT = Number(process.env.PORT) || 8080;
-const BACKEND = new URL(process.env.BACKEND_URL || 'http://127.0.0.1:8000');
 const RACINE = path.join(__dirname, '..', 'src');
 
 const TYPES = {
@@ -21,15 +20,68 @@ const TYPES = {
   '.ico': 'image/x-icon',
 };
 
-function transmettreAuBackend(requete, reponse) {
+// Mêmes en-têtes de sécurité que nginx.conf : une page qui enfreindrait la politique CSP
+// (script ou style en ligne, ressource externe) est ainsi repérée dès le développement.
+// Un test vérifie que cette politique reste identique à celle de Nginx.
+const ENTETES_SECURITE = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'same-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Content-Security-Policy':
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+};
+
+/**
+ * Fichier à servir pour une adresse demandée.
+ * Retourne { statut: 200, fichier }, ou { statut: 400 } si l'adresse est mal formée
+ * (par exemple « /%E0%A4%A », que decodeURIComponent refuse), ou { statut: 403 } si elle
+ * cherche à sortir du dossier servi (« ../ »).
+ */
+function resoudreFichier(url, racine) {
+  let adresse;
+  try {
+    adresse = decodeURIComponent(new URL(url, 'http://localhost').pathname);
+  } catch (_) {
+    return { statut: 400 };
+  }
+  if (adresse.includes('\0')) return { statut: 400 };
+
+  const demande = adresse.endsWith('/') ? adresse + 'index.html' : adresse;
+  const fichier = path.normalize(path.join(racine, demande));
+  if (!fichier.startsWith(racine + path.sep)) return { statut: 403 };
+  return { statut: 200, fichier };
+}
+
+function repondreTexte(reponse, statut, texte) {
+  reponse.writeHead(statut, { 'Content-Type': 'text/plain; charset=utf-8' });
+  reponse.end(texte);
+}
+
+function servirFichier(requete, reponse, racine) {
+  const resultat = resoudreFichier(requete.url, racine);
+  if (resultat.statut === 400) return repondreTexte(reponse, 400, 'Requête invalide');
+  if (resultat.statut === 403) return repondreTexte(reponse, 403, 'Interdit');
+
+  fs.readFile(resultat.fichier, (erreur, contenu) => {
+    if (erreur) return repondreTexte(reponse, 404, 'Page introuvable');
+    reponse.writeHead(200, {
+      'Content-Type': TYPES[path.extname(resultat.fichier)] || 'application/octet-stream',
+      'Cache-Control': 'no-cache', // en développement, toujours la dernière version des fichiers
+    });
+    reponse.end(contenu);
+  });
+}
+
+function transmettreAuBackend(requete, reponse, backend) {
   const chemin = requete.url.replace(/^\/api/, '') || '/';
   const sortante = http.request(
     {
-      hostname: BACKEND.hostname,
-      port: BACKEND.port,
+      hostname: backend.hostname,
+      port: backend.port,
       path: chemin,
       method: requete.method,
-      headers: { ...requete.headers, host: BACKEND.host },
+      headers: { ...requete.headers, host: backend.host },
     },
     (reponseBackend) => {
       reponse.writeHead(reponseBackend.statusCode, reponseBackend.headers);
@@ -43,33 +95,30 @@ function transmettreAuBackend(requete, reponse) {
   requete.pipe(sortante);
 }
 
-function servirFichier(requete, reponse) {
-  const adresse = decodeURIComponent(new URL(requete.url, 'http://localhost').pathname);
-  const demande = adresse.endsWith('/') ? adresse + 'index.html' : adresse;
-  const fichier = path.normalize(path.join(RACINE, demande));
+/** Crée le serveur sans le démarrer (les tests le lancent sur un port libre). */
+function creerServeur(options) {
+  const racine = (options && options.racine) || RACINE;
+  const backend = new URL((options && options.backend) || process.env.BACKEND_URL || 'http://127.0.0.1:8000');
 
-  // Interdit de sortir du dossier src/ (../).
-  if (!fichier.startsWith(RACINE + path.sep)) {
-    reponse.writeHead(403);
-    reponse.end('Interdit');
-    return;
-  }
-  fs.readFile(fichier, (erreur, contenu) => {
-    if (erreur) {
-      reponse.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      reponse.end('Page introuvable');
-      return;
+  return http.createServer((requete, reponse) => {
+    try {
+      Object.entries(ENTETES_SECURITE).forEach(([nom, valeur]) => reponse.setHeader(nom, valeur));
+      if (requete.url.startsWith('/api/')) transmettreAuBackend(requete, reponse, backend);
+      else servirFichier(requete, reponse, racine);
+    } catch (_) {
+      // Une requête inattendue ne doit jamais arrêter le serveur.
+      if (!reponse.headersSent) repondreTexte(reponse, 500, 'Erreur du serveur de développement');
+      else reponse.end();
     }
-    reponse.writeHead(200, { 'Content-Type': TYPES[path.extname(fichier)] || 'application/octet-stream' });
-    reponse.end(contenu);
   });
 }
 
-http
-  .createServer((requete, reponse) => {
-    if (requete.url.startsWith('/api/')) transmettreAuBackend(requete, reponse);
-    else servirFichier(requete, reponse);
-  })
-  .listen(PORT, '127.0.0.1', () => {
-    console.log(`Site : http://localhost:${PORT}  (API transmise à ${BACKEND.origin})`);
+if (require.main === module) {
+  const port = Number(process.env.PORT) || 8080;
+  const backend = process.env.BACKEND_URL || 'http://127.0.0.1:8000';
+  creerServeur({ backend }).listen(port, '127.0.0.1', () => {
+    console.log(`Site : http://localhost:${port}  (API transmise à ${new URL(backend).origin})`);
   });
+}
+
+module.exports = { resoudreFichier, creerServeur, RACINE, ENTETES_SECURITE };

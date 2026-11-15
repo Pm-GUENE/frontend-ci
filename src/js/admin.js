@@ -85,17 +85,16 @@
     window.location.replace(S.PAGE_CONNEXION);
   }
 
-  /** Retourne vrai si l'erreur concernait la session (la page est alors quittée). */
+  /**
+   * Retourne vrai si l'erreur concernait la session (la page est alors quittée).
+   * Un 403 ici signifie que le jeton n'a pas les droits d'administrateur, alors que la session du
+   * navigateur dit le contraire : on déconnecte, sans jamais renvoyer vers cette même page.
+   */
   function erreurDeSession(erreur) {
-    if (erreur.statut === 401) {
-      deconnecter('Votre session a expiré. Reconnectez-vous.');
-      return true;
-    }
-    if (erreur.statut === 403) {
-      window.location.replace(S.destination(session));
-      return true;
-    }
-    return false;
+    const reaction = S.reactionErreurAcces(erreur.statut, erreur.corps, session, true);
+    if (!reaction) return false;
+    deconnecter(reaction.message || 'Accès refusé. Reconnectez-vous.');
+    return true;
   }
 
   document.getElementById('deconnexion').addEventListener('click', () => deconnecter());

@@ -157,6 +157,35 @@
     return { ok: !erreurs.nouveau && !erreurs.confirmation, erreurs };
   }
 
+  /**
+   * Que faire quand le backend refuse l'accès (401 ou 403) ?
+   * Retourne null si l'erreur ne concerne pas la session, sinon :
+   *   { type: 'deconnexion', message }  la session n'est plus valable : retour à la connexion ;
+   *   { type: 'mot_de_passe' }          le dentiste doit d'abord changer son mot de passe temporaire.
+   *
+   * `chargement` vaut vrai pour le chargement d'une page : tout 403 est alors un problème de droits.
+   * Il vaut faux pour une action sur un élément : un 403 peut alors être un refus métier
+   * (« Ce rendez-vous ne vous appartient pas »), qui reste un simple message à l'écran.
+   *
+   * La fonction ne renvoie jamais vers la page de l'espace courant : c'est ce renvoi qui provoquait
+   * un rechargement sans fin quand la session du navigateur ne correspondait plus aux droits réels.
+   */
+  function reactionErreurAcces(statut, corps, session, chargement) {
+    if (statut === 401) {
+      return { type: 'deconnexion', message: 'Votre session a expiré. Reconnectez-vous.' };
+    }
+    if (statut !== 403) return null;
+
+    const detail = corps && typeof corps.detail === 'string' ? corps.detail : '';
+    if (session && session.role === 'dentiste' && /changer votre mot de passe/i.test(detail)) {
+      return { type: 'mot_de_passe' };
+    }
+    if (chargement || /réservé/i.test(detail)) {
+      return { type: 'deconnexion', message: 'Accès refusé. Reconnectez-vous.' };
+    }
+    return null;
+  }
+
   return {
     PAGE_CONNEXION,
     PAGE_MOT_DE_PASSE,
@@ -165,6 +194,7 @@
     sessionDepuisReponse,
     sessionValide,
     destination,
+    reactionErreurAcces,
     creerStockage,
     validerIdentifiant,
     validerMotDePasseSaisi,

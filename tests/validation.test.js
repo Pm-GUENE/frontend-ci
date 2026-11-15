@@ -71,6 +71,29 @@ describe('Téléphone sénégalais', () => {
   });
 });
 
+describe('Lien téléphonique (tel:)', () => {
+  test('construit le lien à partir des 9 chiffres stockés par le backend', () => {
+    assert.equal(V.lienTelephone('771234567'), 'tel:771234567');
+  });
+
+  test('garde le + d\'un indicatif et retire les espaces', () => {
+    assert.equal(V.lienTelephone('+221 77 123 45 67'), 'tel:+221771234567');
+    assert.equal(V.lienTelephone(' 77 123 45 67 '), 'tel:771234567');
+  });
+
+  test('ne laisse passer aucun autre caractère dans le lien', () => {
+    assert.equal(V.lienTelephone('77123<script>4567'), 'tel:771234567');
+    assert.equal(V.lienTelephone('771234567" onclick="x'), 'tel:771234567');
+    assert.equal(V.lienTelephone('javascript:alert(1)'), 'tel:1');
+    assert.equal(V.lienTelephone('7712+34567'), 'tel:771234567');
+  });
+
+  test('une valeur absente donne un lien vide, sans erreur', () => {
+    assert.equal(V.lienTelephone(undefined), 'tel:');
+    assert.equal(V.lienTelephone(null), 'tel:');
+  });
+});
+
 describe('Motif de consultation', () => {
   test('accepte un identifiant de motif, refuse l\'absence de choix', () => {
     assert.deepEqual(V.validerMotif('4'), { ok: true, valeur: 4, message: '' });
@@ -104,6 +127,12 @@ describe('Messages d\'erreur de l\'API', () => {
     assert.match(V.extraireMessage(422, null), /invalides/);
     assert.match(V.extraireMessage(500, null), /indisponible/);
     assert.match(V.extraireMessage(503, null), /indisponible/);
+  });
+
+  test('explique la limite de requêtes de Nginx (429) et un envoi trop volumineux (413)', () => {
+    // Ces réponses viennent de Nginx, en HTML : il n'y a donc pas de corps JSON à lire.
+    assert.match(V.extraireMessage(429, null), /Trop de tentatives/);
+    assert.match(V.extraireMessage(413, null), /trop volumineuses/);
   });
 
   test('signale une coupure réseau quand il n\'y a pas de code', () => {

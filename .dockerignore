@@ -1,7 +1,15 @@
+# Seuls nginx.conf et src/ entrent dans l'image : tout le reste est exclu du contexte de build.
 .git
 .gitignore
+.dockerignore
+.env
+.env.*
 node_modules
 tests
-README.md
+scripts
+package.json
+package-lock.json
 Jenkinsfile
+README.md
 *.md
+*.log

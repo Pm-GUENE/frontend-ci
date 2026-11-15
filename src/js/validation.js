@@ -66,6 +66,17 @@
     return `${c.slice(0, 2)} ${c.slice(2, 5)} ${c.slice(5, 7)} ${c.slice(7, 9)}`;
   }
 
+  /**
+   * Adresse d'un lien « tel: » à partir d'un numéro reçu de l'API.
+   * Par précaution, seuls les chiffres et un « + » initial sont gardés : aucun autre caractère
+   * ne peut se glisser dans l'attribut href, même si une donnée inattendue arrivait du backend.
+   */
+  function lienTelephone(tel) {
+    const brut = String(tel === undefined || tel === null ? '' : tel);
+    const chiffres = brut.replace(/\D/g, '');
+    return `tel:${brut.trim().startsWith('+') ? '+' : ''}${chiffres}`;
+  }
+
   function validerMotif(valeur) {
     return Number.isInteger(Number(valeur)) && Number(valeur) > 0 && String(valeur).trim() !== ''
       ? { ok: true, valeur: Number(valeur), message: '' }
@@ -89,6 +100,8 @@
     if (statut === 409) return "Ce créneau vient d'être pris, choisissez-en un autre.";
     if (statut === 404) return 'Dentiste ou motif introuvable. Fermez cette fenêtre et réessayez.';
     if (statut === 422) return 'Les informations saisies sont invalides.';
+    if (statut === 429) return 'Trop de tentatives en peu de temps. Patientez un instant, puis réessayez.';
+    if (statut === 413) return 'Les informations envoyées sont trop volumineuses.';
     if (statut >= 500) return 'Le service est momentanément indisponible. Réessayez dans un instant.';
     return 'Une erreur est survenue. Réessayez.';
   }
@@ -98,6 +111,7 @@
     normaliserTelephone,
     validerTelephone,
     formaterTelephone,
+    lienTelephone,
     validerMotif,
     extraireMessage,
   };
